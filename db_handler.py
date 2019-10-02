@@ -100,7 +100,7 @@ class DbHandler:
         :param fede:
         :return:
         """
-        sql = ''' INSERT INTO federations(id, name, category) VALUES(?, ?, ?) '''
+        sql = ''' INSERT or IGNORE INTO federations(id, name, category) VALUES(?, ?, ?) '''
         self.__cur.execute(sql, fede)
         # Save all the changes
         return self.__cur.lastrowid

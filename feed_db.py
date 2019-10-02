@@ -10,28 +10,30 @@ import os
 import db_handler
 
 
-def populate_fede(file_path, dbh, category):
+def populate_fede(file_path, dbh, category, year):
     """
     Parse the input file sorted by age and feed the federation table.
     :param file_path:
     :param dbh:
     :param category:
+    :param year:
     """
     with open(file_path) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             if row['Codes Fédé'] != "":
                 dbh.create_federation((row['Codes Fédé'],
-                                       row['Fédérations françaises agréées en 2017'],
+                                       row['Fédérations françaises agréées en ' + year],
                                        category))
 
 
 
-def populate_by_age(file_path, dbh):
+def populate_by_age(file_path, dbh, year):
     """
     Parse the input file sorted by age and feed the by_age table.
     :param file_path:
     :param dbh:
+    :param year:
     """
     with open(file_path) as csvfile:
         reader = csv.DictReader(csvfile)
@@ -39,15 +41,15 @@ def populate_by_age(file_path, dbh):
         for row in reader:
             if row['Codes Fédé'] != "":
                 code_fede = row['Codes Fédé']
-            if row['Fédérations françaises agréées en 2017'] == "Licences masculines":
+            if row['Fédérations françaises agréées en ' + year] == "Licences masculines":
                 for age in db_handler.AGE_CATEGORY:
-                    dbh.create_age((code_fede, age, 'male', row[age], 2017))
-            if row['Fédérations françaises agréées en 2017'] == "Licences féminines":
+                    dbh.create_age((code_fede, age, 'male', row[age], year))
+            if row['Fédérations françaises agréées en ' + year] == "Licences féminines":
                 for age in db_handler.AGE_CATEGORY:
-                    dbh.create_age((code_fede, age, 'female', row[age], 2017))
-            if row['Fédérations françaises agréées en 2017'] == "Licences non réparties":
+                    dbh.create_age((code_fede, age, 'female', row[age], year))
+            if row['Fédérations françaises agréées en ' + year] == "Licences non réparties":
                 for age in db_handler.AGE_CATEGORY:
-                    dbh.create_age((code_fede, age, 'unknown', row[age], 2017))
+                    dbh.create_age((code_fede, age, 'unknown', row[age], year))
 
 
 def get_departments(file_path):
@@ -64,7 +66,7 @@ def get_departments(file_path):
     return line2[3:-2]
 
 
-DPT_LIST = get_departments('data/csv/2017/licencesdepsexe17_oly.csv')
+DPT_LIST = get_departments('data/csv/2017/licencesdepsexe2017_oly.csv')
 
 
 def fill_clubs(file_path, dbh, year):
@@ -102,13 +104,13 @@ def fill_departments(file_path, dbh, year):
             for row in data:
                 if row['Codes Fédé'] != "":
                     code_fede = row['Codes Fédé']
-                if row['Fédérations françaises agréées en 2017'] == "Licences masculines":
+                if row['Fédérations françaises agréées en ' + year] == "Licences masculines":
                     for dep in DPT_LIST:
                         dbh.create_by_dep((code_fede, dep, row[dep], 'male', year))
-                if row['Fédérations françaises agréées en 2017'] == "Licences féminines":
+                if row['Fédérations françaises agréées en ' + year] == "Licences féminines":
                     for dep in DPT_LIST:
                         dbh.create_by_dep((code_fede, dep, row[dep], 'female', year))
-                if row['Fédérations françaises agréées en 2017'] == "Licences non réparties":
+                if row['Fédérations françaises agréées en ' + year] == "Licences non réparties":
                     for dep in DPT_LIST:
                         dbh.create_by_dep((code_fede, dep, row[dep], 'unknown', year))
     os.remove("__tmp_csv.csv")
@@ -120,21 +122,25 @@ def main():
     """
     dbh = db_handler.DbHandler()
 
-    path = "data/csv/2017/"
+    years = ["2017", "2018"]
 
-    populate_fede(path + 'licencesagesexe17_oly.csv', dbh, 'Olympic')
-    populate_fede(path + 'licencesagesexe17_noly.csv', dbh, 'Non Olympic')
-    populate_fede(path + 'licencesagesexe17_multi.csv', dbh, 'Multisports')
+    for year in years:
+        print("Process data for ", year)
+        path = "data/csv/" + year + "/"
 
-    populate_by_age(path + 'licencesagesexe17_oly.csv', dbh)
-    populate_by_age(path + 'licencesagesexe17_noly.csv', dbh)
-    populate_by_age(path + 'licencesagesexe17_multi.csv', dbh)
+        populate_fede(path + 'licencesagesexe' + year + '_oly.csv', dbh, 'Olympic', year)
+        populate_fede(path + 'licencesagesexe' + year + '_noly.csv', dbh, 'Non Olympic', year)
+        populate_fede(path + 'licencesagesexe' + year + '_multi.csv', dbh, 'Multisports', year)
 
-    fill_clubs(path + 'clubs17_dep.csv', dbh, 2017)
+        populate_by_age(path + 'licencesagesexe' + year + '_oly.csv', dbh, year)
+        populate_by_age(path + 'licencesagesexe' + year + '_noly.csv', dbh, year)
+        populate_by_age(path + 'licencesagesexe' + year + '_multi.csv', dbh, year)
 
-    fill_departments(path + 'licencesdepsexe17_oly.csv', dbh, 2017)
-    fill_departments(path + 'licencesdepsexe17_noly.csv', dbh, 2017)
-    fill_departments(path + 'licencesdepsexe17_multi.csv', dbh, 2017)
+        fill_clubs(path + 'clubs' + year + '_dep.csv', dbh, year)
+
+        fill_departments(path + 'licencesdepsexe' + year + '_oly.csv', dbh, year)
+        fill_departments(path + 'licencesdepsexe' + year + '_noly.csv', dbh, year)
+        fill_departments(path + 'licencesdepsexe' + year + '_multi.csv', dbh, year)
 
     dbh.save()
     # Close the database connection
